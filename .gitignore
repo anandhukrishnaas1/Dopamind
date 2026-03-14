@@ -1,0 +1,10 @@
+node_modules/
+build/
+.dart_tool/
+.pub/
+.pub-cache/
+.env
+*.log
+/android/app/build/
+/android/build/
+.DS_Store
