@@ -58,8 +58,15 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     final store = context.read<AppStore>();
-    // In a real app, we'd get the name from GoogleSignInAccount
-    await store.login('User', 'user@gmail.com');
+    try {
+      await store.signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In Error: $e')),
+        );
+      }
+    }
     if (mounted) setState(() => _isLoading = false);
   }
 

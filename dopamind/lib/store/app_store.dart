@@ -4,6 +4,7 @@ import 'package:dopamind/services/usage_service.dart';
 import 'package:dopamind/services/permission_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
 
 enum AppScreen {
@@ -437,18 +438,46 @@ class AppStore extends ChangeNotifier {
     await prefs.setString('userName', _userName);
     await prefs.setString('email', email);
     
-    // Attempt Firebase Login
-    try {
-      if (FirebaseAuth.instance.app.name != null) {
-        await FirebaseAuth.instance.signInAnonymously(); 
-      }
-    } catch (e) {
-       debugPrint("Firebase Login Error: $e");
-    }
-
     _syncToFirestore();
     _syncFromFirestore();
     notifyListeners();
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      final googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) return; // User cancelled
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        _isAuthenticated = true;
+        _userName = user.displayName ?? _userName;
+        _email = user.email ?? _email;
+        _currentScreen = AppScreen.dashboard;
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isAuthenticated', true);
+        await prefs.setString('userName', _userName);
+        await prefs.setString('email', _email);
+
+        _syncToFirestore();
+        _syncFromFirestore();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Google Sign-In Error: $e");
+      rethrow;
+    }
   }
 
   Future<void> signup(String name, String email, String password) async {

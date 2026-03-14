@@ -1,12 +1,4 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("com.google.gms:google-services:4.4.0")
-    }
-}
+// Redeclared in settings.gradle.kts
 
 allprojects {
     repositories {
